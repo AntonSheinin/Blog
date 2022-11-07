@@ -17,6 +17,6 @@ docker compose up --build
 ```
 
 ## Usage
-1. Access the app on '<server-ip-addr>':8000
+1. Access the app on server-ip-addr:8000
 2. Access /docs for Swagger UI with all API endpoints
 
