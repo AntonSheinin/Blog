@@ -1,0 +1,30 @@
+version: "3.9"
+
+services:
+  blog:
+    build: .
+    ports:
+      - 8000:8000
+    depends_on:
+      - redis-data
+      - redis-cache
+    
+  redis-data:
+    image: redis/redis-stack-server:latest
+    #command: redis-server --protected-mode no --save "" --appendonly yes --dir ./
+    ports:
+      - 6379:6379
+    volumes:
+      - ./:/data
+  
+  redis-cache:
+    image: redis/redis-stack-server:latest
+    command: redis-server --port 6378 --protected-mode no --save "" --appendonly no --maxmemory 2mb --maxmemory-policy allkeys-lru
+    ports:
+      - 6378:6378
+    
+
+
+        
+
+  

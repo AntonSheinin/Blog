@@ -1,0 +1,9 @@
+fastapi
+fastapi-cache2[redis]
+pydantic[email]
+python-jose[cryptography]
+passlib[bcrypt]
+python-multipart
+redis-om
+redis==4.3.3
+uvicorn[standard]
