@@ -10,7 +10,7 @@ services:
       - redis-cache
     
   redis-data:
-    image: redislabs/redismod
+    image: redis/redis-stack-server
     environment:
       - REDIS_ARGS=--appendonly yes --save ""
     ports:

@@ -1,4 +1,5 @@
 import datetime
+import logging
 from typing import Any
 from fastapi_cache.backends.redis import RedisBackend
 from fastapi.security import OAuth2PasswordRequestForm
@@ -29,6 +30,9 @@ FastAPICache.init(RedisBackend(redis_cache), prefix="fastapi-cache")
 
 app = FastAPI()
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 
 @app.post("/signup")
 async def create_user(body: User) -> User | Any:
@@ -36,7 +40,7 @@ async def create_user(body: User) -> User | Any:
         Creating new user
     """
 
-    if not User.find(User.email == body.email).all():
+    if User.find(User.email == body.email).all():
         raise HTTPException(
             status_code = status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail = "user email already exists"
@@ -49,6 +53,8 @@ async def create_user(body: User) -> User | Any:
             email = body.email,
             password = get_hashed_password(body.password)
         )
+
+        logger.info('created user: %s', user.pk)
 
     except ValidationError:
         return
@@ -78,6 +84,8 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()) -> dict:
             detail = "Incorrect email or password"
         )
 
+    logger.info('user %s logged in', user.pk)
+
     return {
         "access_token": create_access_token(user.email),
         "refresh_token": create_refresh_token(user.email)
@@ -90,6 +98,8 @@ async def get_current_user_data(user: User = Depends(get_current_user)) -> User:
     """
         Get logged user data
     """
+    
+    logger.info('logged user: %s', user.pk)
 
     return user
 
@@ -119,6 +129,8 @@ async def update_user(user_pk: str, body: dict, logged_user: User = Depends(get_
         user.last_name = body["last_name"].strip()
         user.last_update = datetime.date.today()
 
+        logger.info('user %s updated', user.pk)
+
         return user.save()
 
     except ValidationError:
@@ -146,6 +158,8 @@ async def delete_user(user_pk: str, logged_user: User = Depends(get_current_user
 
     User.delete(user_pk)
 
+    logger.info('user %s deleted', user_pk)
+
     return {"success": "user deleted successfully"}
 
 
@@ -157,8 +171,12 @@ async def create_blog(body: Blog, logged_user: User = Depends(get_current_user))
 
     try:
         blog = Blog(title = body.title.strip(), author = logged_user.pk)
+
         logged_user.blogs.append(blog.pk)
+        logged_user.last_update = datetime.datetime.today()
         logged_user.save()
+
+        logger.info('user %s created blog %s', logged_user.pk, blog.pk)
 
         return blog.save()
 
@@ -177,6 +195,8 @@ async def get_blog(blog_pk: str) -> Blog:
             status_code = status.HTTP_404_NOT_FOUND,
             detail = "Blog not found"
         )
+
+    logger.info('getting blog: %s', blog_pk)
 
     return Blog.get(blog_pk)
 
@@ -205,6 +225,8 @@ async def update_blog(blog_pk: str, body: dict, logged_user: User = Depends(get_
         blog.title = body["title"].strip()
         blog.last_update = datetime.date.today()
 
+        logger.info('blog %s updated', blog.pk)
+
         return blog.save()
 
     except ValidationError:
@@ -223,13 +245,27 @@ async def delete_blog(blog_pk: str, logged_user: User = Depends(get_current_user
             detail = "Blog not found"
         )
 
-    if Blog.get(blog_pk).author != logged_user.pk:
+    blog = Blog.get(blog_pk)
+
+    if blog.author != logged_user.pk:
         raise HTTPException(
             status_code = status.HTTP_401_UNAUTHORIZED,
             detail = "Someone else's blog"
         )
+    
+    if blog.posts:
+        raise HTTPException(
+            status_code = status.HTTP_403_FORBIDDEN,
+            detail = "blog not empty"
+        )
 
     Blog.delete(blog_pk)
+
+    logger.info('blog %s deleted', blog_pk)
+
+    logged_user.blogs.remove(blog_pk)
+    logged_user.last_update = datetime.datetime.today()
+    logged_user.save()
 
     return {"success": "blog deleted successfully"}
 
@@ -240,6 +276,8 @@ async def blog_list() -> list:
     """
         Getting the blog list
     """
+    logger.info('getting the blog list')
+
     return Blog.all_pks()
 
 
@@ -265,11 +303,15 @@ async def create_post(body: BlogPost, logged_user: User = Depends(get_current_us
         post = BlogPost(content = body.content.strip(), author = logged_user.pk, blog = body.blog)
 
         logged_user.posts.append(post.pk)
+        logged_user.last_update = datetime.datetime.today()
         logged_user.save()
 
         blog = Blog.get(body.blog)
         blog.posts.append(post.pk)
+        blog.last_update = datetime.datetime.today()
         blog.save()
+
+        logger.info('post %s created in blog %s', post.pk, blog.pk)
 
         return post.save()
 
@@ -301,6 +343,8 @@ async def update_post(post_pk: str, body: dict, logged_user: User = Depends(get_
         post.content = body["content"].strip()
         post.last_update = datetime.date.today()
 
+        logger.info('post %s updated', post.pk)
+
         return post.save()
 
     except ValidationError:
@@ -327,6 +371,12 @@ async def delete_post(post_pk: str, logged_user: User = Depends(get_current_user
 
     BlogPost.delete(post_pk)
 
+    logged_user.posts.remove(post_pk)
+    logged_user.last_update = datetime.datetime.today()
+    logged_user.save()
+
+    logger.info('post %s deleted', post_pk)
+
     return {"success": "post deleted successfully"}
 
 
@@ -347,10 +397,14 @@ async def create_like(body: Like, logged_user: User = Depends(get_current_user))
         like = Like(post = body.post, author = logged_user.pk)
 
         logged_user.likes.append(like.pk)
-        post.likes.append(like.pk)
-
+        logged_user.last_update = datetime.datetime.today()
         logged_user.save()
+
+        post.likes.append(like.pk)
+        post.last_update = datetime.datetime.today()
         post.save()
+
+        logger.info('like %s created for post %s', like.pk, post.pk)
 
         return like.save()
 
@@ -370,12 +424,25 @@ async def delete_like(like_pk: str, logged_user: User = Depends(get_current_user
             detail = "Like not found"
         )
 
-    if Like.get(like_pk).author != logged_user.pk:
+    like = Like.get(like_pk)
+
+    if like.author != logged_user.pk:
         raise HTTPException(
             status_code = status.HTTP_401_UNAUTHORIZED,
             detail = "Someone else's like"
         )
 
+    post = BlogPost.get(like.post)
+    post.likes.remove(like.pk)
+    post.last_update = datetime.date.today()
+    post.save()
+
+    logged_user.likes.remove(like.pk)
+    logged_user.last_update = datetime.date.today()
+    logged_user.save()
+
     Like.delete(like_pk)
+
+    logger.info('like %s deleted', like_pk)
 
     return {"success": "like deleted successfully"}
