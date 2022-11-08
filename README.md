@@ -1,5 +1,5 @@
 # Blog
-backend server for blog application. 
+Backend server for blog application. 
 Based on :
 ```shell
  - FastAPI framework + Uvicorn
@@ -10,9 +10,6 @@ Based on :
 ```
 
 ## Run
-
-to run in docker compose
-
 ```shell
 docker compose up --build
 ```

@@ -5,8 +5,8 @@
 
 import datetime
 from abc import ABC
-from pydantic import EmailStr, Field, BaseModel
-from redis_om import EmbeddedJsonModel, Migrator
+from pydantic import EmailStr, BaseModel
+from redis_om import EmbeddedJsonModel, Field, Migrator
 from .db_connectors import redis_data
 
 
