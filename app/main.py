@@ -25,7 +25,6 @@ from .auth import (
 
 from .db_connectors import redis_cache
 
-
 FastAPICache.init(RedisBackend(redis_cache), prefix="fastapi-cache")
 
 app = FastAPI()
@@ -168,7 +167,7 @@ async def create_blog(body: Blog, logged_user: User = Depends(get_current_user))
 
 
 @app.get("/blogs/{blog_pk}")
-@cache(expire=10)
+@cache(expire=60)
 async def get_blog(blog_pk: str) -> Blog:
     """
         Getting blog

@@ -19,7 +19,7 @@ services:
       - ./:/data
   
   redis-cache:
-    image: redis:alpine
+    image: redis/redis-stack-server
     environment:
       - REDIS_ARGS=--port 6378 --protected-mode no --save "" --appendonly no --maxmemory 2mb --maxmemory-policy allkeys-lru
     ports:
