@@ -1,8 +1,3 @@
-# pylint: disable=missing-module-docstring
-# pylint: disable=missing-class-docstring
-# pylint: disable=missing-function-docstring
-# pylint: disable=maybe-no-member
-
 import os
 from datetime import datetime, timedelta
 from jose import jwt, JWTError
@@ -27,14 +22,26 @@ reuseable_oauth = OAuth2PasswordBearer(tokenUrl="/login", scheme_name="JWT")
 
 
 def get_hashed_password(password: str) -> str:
+    """
+        Returns the hash value of user password
+    """
+
     return password_context.hash(password)
 
 
 def verify_password(password: str, hashed_pass: str) -> bool:
+    """
+        Verifying the given password by stored hash
+    """
+
     return password_context.verify(password, hashed_pass)
 
 
 def create_access_token(subject: str, expires_delta: int = None) -> str:
+    """
+        Creating access JWT token from the user's email
+    """
+
     if expires_delta is not None:
         expires_delta = datetime.utcnow() + expires_delta
     else:
@@ -46,6 +53,10 @@ def create_access_token(subject: str, expires_delta: int = None) -> str:
 
 
 def create_refresh_token(subject: str, expires_delta: int = None) -> str:
+    """
+        Creating refresh JWT token from the user's email
+    """
+
     if expires_delta is not None:
         expires_delta = datetime.utcnow() + expires_delta
     else:
@@ -57,20 +68,25 @@ def create_refresh_token(subject: str, expires_delta: int = None) -> str:
 
 
 async def get_current_user(token: str = Depends(reuseable_oauth)) -> User:
+    """
+        Validating the current JWT token not expired and getting the user's email
+        from the token. Retrieving user instance by this email
+    """
+
     try:
         payload = jwt.decode(
             token, JWT_SECRET_KEY, algorithms=[ALGORITHM]
         )
 
         token_data = TokenPayload(**payload)
-        
+
         if datetime.fromtimestamp(token_data.exp) < datetime.now():
             raise HTTPException(
                 status_code = status.HTTP_401_UNAUTHORIZED,
                 detail="Token expired",
                 headers={"WWW-Authenticate": "Bearer"},
             )
-            
+
     except(JWTError, ValidationError):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

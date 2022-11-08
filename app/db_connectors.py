@@ -1,9 +1,3 @@
-# pylint: disable=missing-module-docstring
-# pylint: disable=missing-class-docstring
-# pylint: disable=missing-function-docstring
-# pylint: disable=maybe-no-member
-
-
 from redis_om import get_redis_connection
 import aioredis
 
@@ -14,6 +8,7 @@ REDIS_DATA_PORT = 6379
 REDIS_CACHE_PORT = 6378
 
 redis_data = get_redis_connection(host=REDIS_HOST, port=REDIS_DATA_PORT, decode_responses=True)
+
 redis_cache = aioredis.from_url(
     url=REDIS_URL,
     port=REDIS_CACHE_PORT,

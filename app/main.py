@@ -1,9 +1,4 @@
-# pylint: disable=missing-module-docstring
-# pylint: disable=missing-class-docstring
-# pylint: disable=missing-function-docstring
-# pylint: disable=maybe-no-member
-
-
+import datetime
 from typing import Any
 from fastapi_cache.backends.redis import RedisBackend
 from fastapi.security import OAuth2PasswordRequestForm
@@ -18,13 +13,6 @@ from .models import (
     Blog,
     BlogPost,
     Like
-)
-
-from .utils import (
-    check_user,
-    check_post,
-    check_blog,
-    check_like,
 )
 
 from .auth import (
@@ -45,10 +33,14 @@ app = FastAPI()
 
 @app.post("/signup")
 async def create_user(body: User) -> User | Any:
-    if check_user(body.email, 'email'):
+    """
+        Creating new user
+    """
+
+    if not User.find(User.email == body.email).all():
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="user email already exists"
+            status_code = status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail = "user email already exists"
         )
 
     try:
@@ -67,10 +59,14 @@ async def create_user(body: User) -> User | Any:
 
 @app.post('/login')
 async def login(form_data: OAuth2PasswordRequestForm = Depends()) -> dict:
-    if not check_user(form_data.username, 'email'):
+    """
+        Authentification of user
+    """
+
+    if not User.find(User.email == form_data.username).all():
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Incorrect email or password"
+            status_code = status.HTTP_400_BAD_REQUEST,
+            detail = "Incorrect email or password"
         )
 
     user = User.find(User.email == form_data.username).all()[0]
@@ -79,8 +75,8 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()) -> dict:
 
     if not verify_password(form_data.password, hashed_pass):
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Incorrect email or password"
+            status_code = status.HTTP_400_BAD_REQUEST,
+            detail = "Incorrect email or password"
         )
 
     return {
@@ -92,21 +88,29 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()) -> dict:
 @app.get('/me')
 @cache(expire=10)
 async def get_current_user_data(user: User = Depends(get_current_user)) -> User:
+    """
+        Get logged user data
+    """
+
     return user
 
 
 @app.put("/users/{user_pk}")
 async def update_user(user_pk: str, body: dict, logged_user: User = Depends(get_current_user)) -> User | Any:
-    if not check_user(user_pk, 'pk'):
+    """
+        Updating logged user data
+    """
+
+    if not User.is_exist(user_pk):
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
+            status_code = status.HTTP_404_NOT_FOUND,
+            detail = "User not found"
         )
 
     if user_pk != logged_user.pk:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Someone else's user"
+            status_code = status.HTTP_401_UNAUTHORIZED,
+            detail = "Someone else's user"
         )
 
     user = User.get(user_pk)
@@ -114,6 +118,7 @@ async def update_user(user_pk: str, body: dict, logged_user: User = Depends(get_
     try:
         user.first_name = body["first_name"].strip()
         user.last_name = body["last_name"].strip()
+        user.last_update = datetime.date.today()
 
         return user.save()
 
@@ -123,16 +128,21 @@ async def update_user(user_pk: str, body: dict, logged_user: User = Depends(get_
 
 @app.delete("/users/{user_pk}")
 async def delete_user(user_pk: str, logged_user: User = Depends(get_current_user)) -> dict:
-    if not check_user(user_pk, 'pk'):
+    """
+        Deleting logged user
+    """
+
+
+    if not User.is_exist(user_pk):
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
+            status_code = status.HTTP_404_NOT_FOUND,
+            detail = "User not found"
         )
 
     if user_pk != logged_user.pk:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Someone else's user"
+            status_code = status.HTTP_401_UNAUTHORIZED,
+            detail = "Someone else's user"
         )
 
     User.delete(user_pk)
@@ -142,6 +152,10 @@ async def delete_user(user_pk: str, logged_user: User = Depends(get_current_user
 
 @app.post("/create-blog")
 async def create_blog(body: Blog, logged_user: User = Depends(get_current_user)) -> User | Any:
+    """
+        Creating new blog, author will be the logged user
+    """
+
     try:
         blog = Blog(title = body.title.strip(), author = logged_user.pk)
         logged_user.blogs.append(blog.pk)
@@ -156,10 +170,13 @@ async def create_blog(body: Blog, logged_user: User = Depends(get_current_user))
 @app.get("/blogs/{blog_pk}")
 @cache(expire=10)
 async def get_blog(blog_pk: str) -> Blog:
-    if not check_blog(blog_pk):
+    """
+        Getting blog
+    """
+    if not Blog.is_exist(blog_pk):
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Blog not found"
+            status_code = status.HTTP_404_NOT_FOUND,
+            detail = "Blog not found"
         )
 
     return Blog.get(blog_pk)
@@ -167,22 +184,27 @@ async def get_blog(blog_pk: str) -> Blog:
 
 @app.put("/blogs/{blog_pk}")
 async def update_blog(blog_pk: str, body: dict, logged_user: User = Depends(get_current_user)) -> User | Any:
-    if not check_blog(blog_pk):
+    """
+        Updating the blog that belongs to the logger user
+    """
+
+    if not Blog.is_exist(blog_pk):
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Blog not found"
+            status_code = status.HTTP_404_NOT_FOUND,
+            detail = "Blog not found"
         )
 
     if blog_pk not in logged_user.blogs:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Someone else's blog"
+            status_code = status.HTTP_401_UNAUTHORIZED,
+            detail = "Someone else's blog"
         )
 
     blog = Blog.get(blog_pk)
 
     try:
         blog.title = body["title"].strip()
+        blog.last_update = datetime.date.today()
 
         return blog.save()
 
@@ -192,16 +214,20 @@ async def update_blog(blog_pk: str, body: dict, logged_user: User = Depends(get_
 
 @app.delete("/blogs/{blog_pk}")
 async def delete_blog(blog_pk: str, logged_user: User = Depends(get_current_user)) -> dict:
-    if not check_blog(blog_pk):
+    """
+        Deleting the blog that belongs to the logged user
+     """
+
+    if not Blog.is_exist(blog_pk):
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Blog not found"
+            status_code = status.HTTP_404_NOT_FOUND,
+            detail = "Blog not found"
         )
 
     if Blog.get(blog_pk).author != logged_user.pk:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Someone else's blog"
+            status_code = status.HTTP_401_UNAUTHORIZED,
+            detail = "Someone else's blog"
         )
 
     Blog.delete(blog_pk)
@@ -212,21 +238,28 @@ async def delete_blog(blog_pk: str, logged_user: User = Depends(get_current_user
 @app.get("/")
 @cache(expire=10)
 async def blog_list() -> list:
+    """
+        Getting the blog list
+    """
     return Blog.all_pks()
 
 
 @app.post("/create-post")
 async def create_post(body: BlogPost, logged_user: User = Depends(get_current_user)) -> BlogPost | Any:
-    if not check_blog(body.blog_pk):
+    """
+        Creating the post in the blog that belongs to the logged user
+    """
+
+    if not Blog.is_exist(body.blog_pk):
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Blog not found"
+            status_code = status.HTTP_404_NOT_FOUND,
+            detail = "Blog not found"
         )
 
     if body.blog_pk not in logged_user.blogs:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Someone else's blog"
+            status_code = status.HTTP_401_UNAUTHORIZED,
+            detail = "Someone else's blog"
         )
 
     try:
@@ -247,22 +280,27 @@ async def create_post(body: BlogPost, logged_user: User = Depends(get_current_us
 
 @app.put("/posts/{post_pk}")
 async def update_post(post_pk: str, body: dict, logged_user: User = Depends(get_current_user)) -> BlogPost | Any:
-    if not check_post(post_pk):
+    """
+        Updating the post in the blog that belongs to the logged user
+    """
+
+    if not BlogPost.is_exist(post_pk):
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Post not found"
+            status_code = status.HTTP_404_NOT_FOUND,
+            detail = "Post not found"
         )
 
     if post_pk not in logged_user.posts:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Someone else's post"
+            status_code = status.HTTP_401_UNAUTHORIZED,
+            detail = "Someone else's post"
         )
 
     post = BlogPost.get(post_pk)
 
     try:
         post.content = body["content"].strip()
+        post.last_update = datetime.date.today()
 
         return post.save()
 
@@ -272,16 +310,20 @@ async def update_post(post_pk: str, body: dict, logged_user: User = Depends(get_
 
 @app.delete("/posts/{post_pk}")
 async def delete_post(post_pk: str, logged_user: User = Depends(get_current_user)) -> dict:
-    if not check_post(post_pk):
+    """
+        Deleting the post that belongs to the logged user
+    """
+
+    if not BlogPost.is_exist(post_pk):
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Post not found"
+            status_code = status.HTTP_404_NOT_FOUND,
+            detail = "Post not found"
         )
 
     if BlogPost.get(post_pk).author != logged_user.pk:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Someone else's post"
+            detail = "Someone else's post"
         )
 
     BlogPost.delete(post_pk)
@@ -291,10 +333,14 @@ async def delete_post(post_pk: str, logged_user: User = Depends(get_current_user
 
 @app.post("/create-like")
 async def create_like(body: Like, logged_user: User = Depends(get_current_user)) -> BlogPost | Any:
-    if not check_post(body.post):
+    """
+        Creating like for the post
+    """
+
+    if not BlogPost.is_exist(body.post):
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Post not found"
+            status_code = status.HTTP_404_NOT_FOUND,
+            detail = "Post not found"
         )
 
     try:
@@ -315,16 +361,20 @@ async def create_like(body: Like, logged_user: User = Depends(get_current_user))
 
 @app.delete("/likes/{like_pk}")
 async def delete_like(like_pk: str, logged_user: User = Depends(get_current_user)) -> dict:
-    if not check_like(like_pk):
+    """
+        Deleting the like that belongs to the logged user
+    """
+
+    if not Like.is_exist(like_pk):
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Like not found"
+            status_code = status.HTTP_404_NOT_FOUND,
+            detail = "Like not found"
         )
 
     if Like.get(like_pk).author != logged_user.pk:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Someone else's like"
+            status_code = status.HTTP_401_UNAUTHORIZED,
+            detail = "Someone else's like"
         )
 
     Like.delete(like_pk)
