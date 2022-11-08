@@ -1,3 +1,10 @@
+"""
+    Models module
+
+    Includes Redis OM and Pydantic models
+"""
+
+
 import datetime
 from abc import ABC
 from pydantic import EmailStr, BaseModel
@@ -13,15 +20,15 @@ class RedisBaseModel(EmbeddedJsonModel, ABC):
     @classmethod
     def is_exist(cls, entity_pk):
         """
-        Classmethod that implements existense checks of 
+        Classmethod that implements existense checks of
         the class instance in database by instance's primary key
-    
+
         """
 
         try:
             cls.get(entity_pk)
             return True
-        
+
         except NotFoundError:
             return False
 
@@ -88,7 +95,7 @@ class TokenPayload(BaseModel):
     """
         Pydantic model for JWT token payload
     """
-    
+
     sub: str = None
     exp: int = None
 

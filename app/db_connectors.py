@@ -1,3 +1,10 @@
+"""
+    db_connectors module
+
+    Includes connectors to Redis database and cache storages
+"""
+
+
 from redis_om import get_redis_connection
 import aioredis
 

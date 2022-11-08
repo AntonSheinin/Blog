@@ -1,3 +1,10 @@
+"""
+    Main module
+
+    Entrypoint and API endpoints
+"""
+
+
 import datetime
 import logging
 from typing import Any
@@ -65,7 +72,7 @@ async def create_user(body: User) -> User | Any:
 @app.post('/login')
 async def login(form_data: OAuth2PasswordRequestForm = Depends()) -> dict:
     """
-        Authentification of user
+        Authentication of user
     """
 
     if not User.find(User.email == form_data.username).all():
@@ -98,7 +105,7 @@ async def get_current_user_data(user: User = Depends(get_current_user)) -> User:
     """
         Get logged user data
     """
-    
+
     logger.info('logged user: %s', user.pk)
 
     return user
@@ -252,7 +259,7 @@ async def delete_blog(blog_pk: str, logged_user: User = Depends(get_current_user
             status_code = status.HTTP_401_UNAUTHORIZED,
             detail = "Someone else's blog"
         )
-    
+
     if blog.posts:
         raise HTTPException(
             status_code = status.HTTP_403_FORBIDDEN,
