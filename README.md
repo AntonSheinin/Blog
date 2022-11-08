@@ -38,3 +38,4 @@ docker compose up --build
 /create-like        - Create like (fields to fill: post_pk)
 /likes/{like_pk}    - Delete like (fields to fill: post_pk)
 ```
+**NOTE** pk's (primary keys) are generated automatically by Redis OM when creating entities
