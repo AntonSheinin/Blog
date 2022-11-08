@@ -6,31 +6,7 @@
 import datetime
 from abc import ABC
 from pydantic import EmailStr, Field, BaseModel
-from fastapi_cache import FastAPICache
-from fastapi_cache.backends.redis import RedisBackend
-from redis_om import EmbeddedJsonModel, Field, Migrator, get_redis_connection
-import aioredis
-
-
-REDIS_HOST = 'redis-data'
-REDIS_URL = 'redis://redis-cache'
-REDIS_DATA_PORT = 6379
-REDIS_CACHE_PORT = 6378
-
-
-redis_data = get_redis_connection(host=REDIS_HOST, port=REDIS_DATA_PORT, decode_responses=True)
-redis_cache = aioredis.from_url(
-    url=REDIS_URL,
-    port=REDIS_CACHE_PORT,
-    encoding="utf8",
-    decode_responses=True,
-    health_check_interval=10,
-    socket_connect_timeout=5,
-    retry_on_timeout=True,
-    socket_keepalive=True
-)
-
-FastAPICache.init(RedisBackend(redis_cache), prefix="fastapi-cache")
+from redis_om import EmbeddedJsonModel, Field, Migrator
 
 
 class RedisBaseModel(EmbeddedJsonModel, ABC):
@@ -42,7 +18,7 @@ class User(RedisBaseModel):
     first_name: str = Field(index=True, full_text_search=True)
     last_name: str = Field(index=True, full_text_search=True)
     email: EmailStr = Field(index=True, full_text_search=True)
-    password: str
+    password: str = Field(min_length = 8)
     signup_date: datetime.date = Field(default = datetime.date.today())
     blogs: list[str] = Field(default_factory = list)
     posts: list[str] = Field(default_factory = list)

@@ -4,14 +4,26 @@
 # pylint: disable=maybe-no-member
 
 
-import logging
 from typing import Any
+from fastapi_cache.backends.redis import RedisBackend
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi_cache.decorator import cache
-from fastapi import FastAPI, HTTPException, status, Depends
+from fastapi_cache import FastAPICache
+from fastapi import HTTPException, status, Depends, FastAPI
 from pydantic import ValidationError
+from redis_om import get_redis_connection
+import aioredis
 
-from auth import (
+from .models import User, Blog, BlogPost, Like
+
+from .utils import (
+    check_user,
+    check_post,
+    check_blog,
+    check_like,
+)
+
+from .auth import (
     get_hashed_password,
     create_access_token,
     create_refresh_token,
@@ -19,12 +31,28 @@ from auth import (
     get_current_user
 )
 
-from models import User, Blog, BlogPost, Like
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+REDIS_HOST = 'redis-data'
+REDIS_URL = 'redis://redis-cache'
+REDIS_DATA_PORT = 6379
+REDIS_CACHE_PORT = 6378
+
+redis_data = get_redis_connection(host=REDIS_HOST, port=REDIS_DATA_PORT, decode_responses=True)
+redis_cache = aioredis.from_url(
+    url=REDIS_URL,
+    port=REDIS_CACHE_PORT,
+    encoding="utf8",
+    decode_responses=True,
+    health_check_interval=10,
+    socket_connect_timeout=5,
+    retry_on_timeout=True,
+    socket_keepalive=True
+)
+
+FastAPICache.init(RedisBackend(redis_cache), prefix="fastapi-cache")
 
 app = FastAPI()
+
 
 @app.post("/signup")
 async def create_user(body: User) -> User | Any:
@@ -97,7 +125,6 @@ async def update_user(user_pk: str, body: dict, logged_user: User = Depends(get_
     try:
         user.first_name = body["first_name"].strip()
         user.last_name = body["last_name"].strip()
-        user.email = body["email"]
 
         return user.save()
 
@@ -314,34 +341,3 @@ async def delete_like(like_pk: str, logged_user: User = Depends(get_current_user
     Like.delete(like_pk)
 
     return {"success": "like deleted successfully"}
-
-
-def check_user(entity: str, method: str) -> bool:
-    if method == 'email':
-        if not User.find(User.email == entity).all():
-            return False
-    if method == 'pk':
-        if not User.find(User.pk == entity).all():
-            return False
-
-    return True
-
-
-def check_blog(blog_pk: str) -> bool:
-    if not Blog.find(Blog.pk == blog_pk).all():
-        return False
-
-    return False
-
-
-def check_post(post_pk: str) -> bool:
-    if not BlogPost.find(BlogPost.pk == post_pk).all():
-        return False
-
-    return True
-
-def check_like(like_pk: str) -> bool:
-    if not Like.find(Like.pk == like_pk).all():
-        return False
-
-    return True

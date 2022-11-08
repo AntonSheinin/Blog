@@ -11,7 +11,7 @@ services:
     
   redis-data:
     image: redis/redis-stack-server:latest
-    #command: redis-server --protected-mode no --save "" --appendonly yes --dir ./
+    #command: redis-server --protected-mode no --save "" --appendonly yes
     ports:
       - 6379:6379
     volumes:

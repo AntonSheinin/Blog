@@ -13,6 +13,7 @@ COPY ./requirements.txt /home/code/blog/
 RUN pip3 install -r requirements.txt
 
 COPY ./ /home/code/blog/
+
 RUN chown code:code /home/code/blog
 USER code
 
@@ -20,6 +21,6 @@ ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
 ENV JWT_SECRET_KEY "jwt secret key"
-ENV JWT_REFRESH_SECRET_KEY "JWT REFRESH SECRET KEY"
+ENV JWT_REFRESH_SECRET_KEY "jwt refresh secret key"
 
-ENTRYPOINT uvicorn main:app --host 0.0.0.0 --log-level debug
+ENTRYPOINT uvicorn app.main:app --host 0.0.0.0 --log-level debug

@@ -12,7 +12,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from pydantic import ValidationError
 
-from models import User, TokenPayload
+from .models import User, TokenPayload
 
 
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
@@ -21,9 +21,7 @@ ALGORITHM = "HS256"
 JWT_SECRET_KEY = os.environ['JWT_SECRET_KEY']
 JWT_REFRESH_SECRET_KEY = os.environ['JWT_REFRESH_SECRET_KEY']
 
-
 password_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 
 reuseable_oauth = OAuth2PasswordBearer(tokenUrl="/login", scheme_name="JWT")
 
