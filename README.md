@@ -1,13 +1,13 @@
 # Blog
 Backend server for blog application. 
 Based on :
-```shell
+
  - FastAPI framework + Uvicorn
  - JWT Auth tokens
  - Redis Storage for data storage
  - Redis Storage for cache (2nd instance optimized for caching)
  - Redis OM
-```
+
 
 ## Run
 ```shell
@@ -15,13 +15,13 @@ docker compose up --build
 ```
 
 ## Usage
-```shell
+
 1. Access the app on SERVER-IP:8000
 2. Access /docs for Swagger UI with all API endpoints docs
-```
+
 
 ## API endpoints 
-```shell
+
 /signup             - Create user (fields to fill: first_name, last_name, email, password)
 /login              - User login (fields to fill: email, password)
 /me                 - Logged user
@@ -37,5 +37,5 @@ docker compose up --build
 /posts/{post_pk}    - Delete post (fields to fill: post_pk)
 /create-like        - Create like (fields to fill: post_pk)
 /likes/{like_pk}    - Delete like (fields to fill: post_pk)
-```
+
 **NOTE** pk's (primary keys) are generated automatically by Redis OM when creating entities
