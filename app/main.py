@@ -67,7 +67,7 @@ async def create_user(body: dict) -> User | Any:
         logger.info('%s', validation_error)
         raise HTTPException(
             status_code = status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail = 'wrong values'
+            detail = str(validation_error)
         )
 
 
@@ -131,7 +131,7 @@ async def update_user(body: dict, logged_user: User = Depends(get_current_user))
         logger.info('%s', validation_error)
         raise HTTPException(
             status_code = status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail = 'wrong values'
+            detail = str(validation_error)
         )
 
 
@@ -168,7 +168,7 @@ async def create_blog(body: dict, logged_user: User = Depends(get_current_user))
         logger.info('%s', validation_error)
         raise HTTPException(
             status_code = status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail = 'wrong values'
+            detail = str(validation_error)
         )
 
 
@@ -220,7 +220,7 @@ async def update_blog(blog_pk: str, body: dict, logged_user: User = Depends(get_
         logger.info('%s', validation_error)
         raise HTTPException(
             status_code = status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail = 'wrong values'
+            detail = str(validation_error)
         )
 
 
@@ -307,7 +307,7 @@ async def create_post(blog_pk: str, body: dict, logged_user: User = Depends(get_
         logger.info('%s', validation_error)
         raise HTTPException(
             status_code = status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail = 'wrong values'
+            detail = str(validation_error)
         )
 
 
@@ -342,7 +342,7 @@ async def update_post(post_pk: str, body: dict, logged_user: User = Depends(get_
         logger.info('%s', validation_error)
         raise HTTPException(
             status_code = status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail = 'wrong values'
+            detail = str(validation_error)
         )
 
 
@@ -418,7 +418,7 @@ async def create_like(post_pk: str, logged_user: User = Depends(get_current_user
         logger.info('%s', validation_error)
         raise HTTPException(
             status_code = status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail = 'wrong values'
+            detail = str(validation_error)
         )
 
 
