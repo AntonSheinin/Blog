@@ -39,5 +39,6 @@ docker compose up --build
 |POST    |/create-like/{post_pk}  |Create like (url to fill: post_pk)                                                   |
 |DELETE  |/likes/{like_pk}        |Delete like (url to fill: like_pk)                                                   |
 
-**Note 1** endpoint "/login" should be used from "Authorize" button in Swagger UI
-**NOTE 2** pk's (primary keys) are generated automatically by Redis OM when creating entities
+## Notes
+1. Endpoint "/login" should be used from "Authorize" button in Swagger UI
+2. Pk's (primary keys) are generated automatically by Redis OM when creating entities
