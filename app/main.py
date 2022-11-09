@@ -5,7 +5,6 @@
 """
 
 
-from datetime import datetime
 import logging
 from typing import Any
 from fastapi_cache.backends.redis import RedisBackend
@@ -62,11 +61,14 @@ async def create_user(body: dict) -> User | Any:
         )
 
         logger.info('created user: %s', user.pk)
+        return user.save()
 
-    except ValidationError:
-        return
-
-    return user.save()
+    except ValidationError as validation_error:
+        logger.info('%s', validation_error)
+        raise HTTPException(
+            status_code = status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail = 'wrong values'
+        )
 
 
 @app.post('/login')
@@ -125,8 +127,12 @@ async def update_user(body: dict, logged_user: User = Depends(get_current_user))
 
         return logged_user.update_save()
 
-    except ValidationError:
-        return
+    except ValidationError as validation_error:
+        logger.info('%s', validation_error)
+        raise HTTPException(
+            status_code = status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail = 'wrong values'
+        )
 
 
 @app.delete("/delete-me")
@@ -158,8 +164,12 @@ async def create_blog(body: dict, logged_user: User = Depends(get_current_user))
 
         return blog.save()
 
-    except ValidationError:
-        return
+    except ValidationError as validation_error:
+        logger.info('%s', validation_error)
+        raise HTTPException(
+            status_code = status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail = 'wrong values'
+        )
 
 
 @app.get("/blogs/{blog_pk}")
@@ -206,8 +216,12 @@ async def update_blog(blog_pk: str, body: dict, logged_user: User = Depends(get_
 
         return blog.update_save()
 
-    except ValidationError:
-        return
+    except ValidationError as validation_error:
+        logger.info('%s', validation_error)
+        raise HTTPException(
+            status_code = status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail = 'wrong values'
+        )
 
 
 @app.delete("/blogs/{blog_pk}")
@@ -289,8 +303,12 @@ async def create_post(blog_pk: str, body: dict, logged_user: User = Depends(get_
 
         return post.save()
 
-    except ValidationError:
-        return
+    except ValidationError as validation_error:
+        logger.info('%s', validation_error)
+        raise HTTPException(
+            status_code = status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail = 'wrong values'
+        )
 
 
 @app.put("/posts/{post_pk}")
@@ -320,8 +338,12 @@ async def update_post(post_pk: str, body: dict, logged_user: User = Depends(get_
 
         return post.update_save()
 
-    except ValidationError:
-        return
+    except ValidationError as validation_error:
+        logger.info('%s', validation_error)
+        raise HTTPException(
+            status_code = status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail = 'wrong values'
+        )
 
 
 @app.delete("/posts/{post_pk}")
@@ -392,8 +414,12 @@ async def create_like(post_pk: str, logged_user: User = Depends(get_current_user
 
         return like.save()
 
-    except ValidationError:
-        return
+    except ValidationError as validation_error:
+        logger.info('%s', validation_error)
+        raise HTTPException(
+            status_code = status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail = 'wrong values'
+        )
 
 
 @app.delete("/likes/{like_pk}")
