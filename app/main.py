@@ -349,6 +349,13 @@ async def delete_post(post_pk: str, logged_user: User = Depends(get_current_user
     logged_user.posts.remove(post.pk)
     logged_user.update_save()
 
+    for like_pk in post.likes:
+        like = Like.get(like_pk)
+        user = User.get(like.author)
+        user.likes.remove(like.pk)
+        user.update_save()
+        Like.delete(like.pk)
+
     blog.posts.remove(post.pk)
     blog.update_save()
 
