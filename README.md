@@ -24,12 +24,12 @@ docker compose up --build
 METHOD  URL                     DESCRIPTION
 
 POST    /signup                 Create user (fields to fill in JSON: first_name, last_name, email, password)
-POST    /login                  User login (fields to fill in form: email, password)
+POST    /login                  User login (fields to fill in form: email, password - see **Note 1**)
 GET     /me                     Logged user
 PUT     /update-me              Update logged user (fields to fill in JSON Request: first_name, last_name)
 DELETE  /delete-me              Delete logged user
 POST    /create-blog            Create blog (filds to fill in JSON Request: title)
-GET     /blogs/{blog_pk}        Get blog (url to fill: blog_pk)
+GET     /blogs/{blog_pk}        Get blog (url to fill: blog_pk - see **Note 2**)
 PUT     /blogs/{blog_pk}        Update blog (url to fill: blog_pk, field to fill in JSON Request: title)
 DELETE  /blogs/{blog_pk}        Delete blog (url to fill: blog_pk)
 GET     /                       Blog list
@@ -39,4 +39,5 @@ DELETE  /posts/{post_pk}        Delete post (url to fill: post_pk)
 POST    /create-like/{post_pk}  Create like (url to fill: post_pk)
 DELETE  /likes/{like_pk}        Delete like (url to fill: like_pk)
 
-**NOTE** pk's (primary keys) are generated automatically by Redis OM when creating entities
+**Note 1** endpoint "/login" should be used from "Authorize" button in Swagger UI
+**NOTE 2** pk's (primary keys) are generated automatically by Redis OM when creating entities
