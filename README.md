@@ -21,7 +21,8 @@ docker compose up --build
 
 
 ## API endpoints 
-METHOD  URL                     DESCRIPTION
+|METHOD  |URL                     |DESCRIPTION                                                              |
+|--------|------------------------|-------------------------------------------------------------------------|
 
 POST    /signup                 Create user (fields to fill in JSON: first_name, last_name, email, password)
 POST    /login                  User login (fields to fill in form: email, password - see **Note 1**)
