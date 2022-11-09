@@ -21,21 +21,22 @@ docker compose up --build
 
 
 ## API endpoints 
+METHOD  URL                     DESCRIPTION
 
-/signup             - Create user (fields to fill: first_name, last_name, email, password)
-/login              - User login (fields to fill: email, password)
-/me                 - Logged user
-/users/{user_pk}    - Update user (fields to fill: user_pk, first_name, last_name)
-/users/{user_pk}    - Delete user (fields to fill: user_pk)
-/create-blog        - Create blog (filds to fill: title)
-/blogs/{blog_pk}    - Get blog (fields to fill: blog_pk)
-/blogs/{blog_pk}    - Update blog (fields to fill: blog_pk, title)
-/blogs/{blog_pk}    - Delete blog (fields to fill: blog_pk)
-/                   - Blog list
-/create-post        - Create post (fields to fill: content, blog_pk)
-/posts/{post_pk}    - Update post (fields to fill: content)
-/posts/{post_pk}    - Delete post (fields to fill: post_pk)
-/create-like        - Create like (fields to fill: post_pk)
-/likes/{like_pk}    - Delete like (fields to fill: post_pk)
+POST    /signup                 Create user (fields to fill in JSON: first_name, last_name, email, password)
+POST    /login                  User login (fields to fill in form: email, password)
+GET     /me                     Logged user
+PUT     /update-me              Update logged user (fields to fill in JSON Request: first_name, last_name)
+DELETE  /delete-me              Delete logged user
+POST    /create-blog            Create blog (filds to fill in JSON Request: title)
+GET     /blogs/{blog_pk}        Get blog (url to fill: blog_pk)
+PUT     /blogs/{blog_pk}        Update blog (url to fill: blog_pk, field to fill in JSON Request: title)
+DELETE  /blogs/{blog_pk}        Delete blog (url to fill: blog_pk)
+GET     /                       Blog list
+POST    /create-post/{blog_pk}  Create post (url to fill: blog_pk, fields to fill in JSON Request: content)
+PUT     /posts/{post_pk}        Update post (url to fill: post_pk, fields to fill in JSON Request: content)
+DELETE  /posts/{post_pk}        Delete post (url to fill: post_pk)
+POST    /create-like/{post_pk}  Create like (url to fill: post_pk)
+DELETE  /likes/{like_pk}        Delete like (url to fill: like_pk)
 
 **NOTE** pk's (primary keys) are generated automatically by Redis OM when creating entities
