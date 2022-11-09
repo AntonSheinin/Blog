@@ -145,7 +145,7 @@ async def delete_user(logged_user: User = Depends(get_current_user)) -> dict:
 
     User.delete(logged_user.pk)
 
-    return {"success": "user deleted successfully"}
+    return {"success": f"user {logged_user.pk} deleted successfully"}
 
 
 @app.post("/create-blog")
@@ -257,7 +257,7 @@ async def delete_blog(blog_pk: str, logged_user: User = Depends(get_current_user
     logged_user.blogs.remove(blog_pk)
     logged_user.update_save()
     
-    return {"success": "blog deleted successfully"}
+    return {"success": f"blog {blog_pk} deleted successfully"}
 
 
 @app.get("/")
@@ -385,7 +385,7 @@ async def delete_post(post_pk: str, logged_user: User = Depends(get_current_user
 
     logger.info('post %s deleted', post_pk)
 
-    return {"success": "post deleted successfully"}
+    return {"success": f"post {post_pk} deleted successfully"}
 
 
 @app.post("/create-like/{post_pk}")
@@ -453,4 +453,4 @@ async def delete_like(like_pk: str, logged_user: User = Depends(get_current_user
 
     logger.info('like %s deleted', like_pk)
 
-    return {"success": "like deleted successfully"}
+    return {"success": f"like {like_pk} deleted successfully"}
