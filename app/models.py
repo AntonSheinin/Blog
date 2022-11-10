@@ -9,6 +9,7 @@ from datetime import datetime
 from abc import ABC
 from pydantic import EmailStr, BaseModel
 from redis_om import EmbeddedJsonModel, Field, Migrator, NotFoundError
+
 from .db_connectors import redis_data
 
 

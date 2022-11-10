@@ -11,9 +11,10 @@ from fastapi_cache.backends.redis import RedisBackend
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi_cache.decorator import cache
 from fastapi_cache import FastAPICache
-from fastapi import HTTPException, status, Depends, FastAPI
+from fastapi import Depends, FastAPI
 from pydantic import ValidationError
 
+from .errors import error_handling
 
 from .models import (
     User,
@@ -47,10 +48,7 @@ async def create_user(body: dict) -> User | Any:
     """
 
     if User.find(User.email == body['email']).all():
-        raise HTTPException(
-            status_code = status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail = "user email already exists"
-        )
+        error_handling('validation_error', 'email already exists')
 
     try:
         user = User(
@@ -64,11 +62,7 @@ async def create_user(body: dict) -> User | Any:
         return user.save()
 
     except ValidationError as validation_error:
-        logger.info('%s', validation_error)
-        raise HTTPException(
-            status_code = status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail = str(validation_error)
-        )
+        error_handling('validation_error', str(validation_error))
 
 
 @app.post('/login')
@@ -78,20 +72,14 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()) -> dict:
     """
 
     if not User.find(User.email == form_data.username).all():
-        raise HTTPException(
-            status_code = status.HTTP_400_BAD_REQUEST,
-            detail = "Incorrect email or password"
-        )
+        error_handling('bad_request', 'email not found')
 
     user = User.find(User.email == form_data.username).all()[0]
 
     hashed_pass = user.password
 
     if not verify_password(form_data.password, hashed_pass):
-        raise HTTPException(
-            status_code = status.HTTP_400_BAD_REQUEST,
-            detail = "Incorrect email or password"
-        )
+        error_handling('bad_request', 'incorrect email or password')
 
     logger.info('user %s logged in', user.pk)
 
@@ -128,11 +116,7 @@ async def update_user(body: dict, logged_user: User = Depends(get_current_user))
         return logged_user.update_save()
 
     except ValidationError as validation_error:
-        logger.info('%s', validation_error)
-        raise HTTPException(
-            status_code = status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail = str(validation_error)
-        )
+        error_handling('validation_error', str(validation_error))
 
 
 @app.delete("/delete-me")
@@ -165,11 +149,7 @@ async def create_blog(body: dict, logged_user: User = Depends(get_current_user))
         return blog.save()
 
     except ValidationError as validation_error:
-        logger.info('%s', validation_error)
-        raise HTTPException(
-            status_code = status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail = str(validation_error)
-        )
+        error_handling('validation_error', str(validation_error))
 
 
 @app.get("/blogs/{blog_pk}")
@@ -179,10 +159,7 @@ async def get_blog(blog_pk: str) -> Blog:
         Getting blog
     """
     if not Blog.is_exist(blog_pk):
-        raise HTTPException(
-            status_code = status.HTTP_404_NOT_FOUND,
-            detail = "Blog not found"
-        )
+        error_handling('not_found', 'blog not found')
 
     logger.info('getting blog: %s', blog_pk)
 
@@ -196,16 +173,10 @@ async def update_blog(blog_pk: str, body: dict, logged_user: User = Depends(get_
     """
 
     if not Blog.is_exist(blog_pk):
-        raise HTTPException(
-            status_code = status.HTTP_404_NOT_FOUND,
-            detail = "Blog not found"
-        )
+        error_handling('not_found', 'blog not found')
 
     if blog_pk not in logged_user.blogs:
-        raise HTTPException(
-            status_code = status.HTTP_401_UNAUTHORIZED,
-            detail = "Someone else's blog"
-        )
+        error_handling('unauthorized', "Someone else's blog")
 
     blog = Blog.get(blog_pk)
 
@@ -217,11 +188,7 @@ async def update_blog(blog_pk: str, body: dict, logged_user: User = Depends(get_
         return blog.update_save()
 
     except ValidationError as validation_error:
-        logger.info('%s', validation_error)
-        raise HTTPException(
-            status_code = status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail = str(validation_error)
-        )
+        error_handling('validation_error', str(validation_error))
 
 
 @app.delete("/blogs/{blog_pk}")
@@ -231,24 +198,15 @@ async def delete_blog(blog_pk: str, logged_user: User = Depends(get_current_user
      """
 
     if not Blog.is_exist(blog_pk):
-        raise HTTPException(
-            status_code = status.HTTP_404_NOT_FOUND,
-            detail = "Blog not found"
-        )
+        error_handling('not_found', 'blog not found')
 
     blog = Blog.get(blog_pk)
 
     if blog.author != logged_user.pk:
-        raise HTTPException(
-            status_code = status.HTTP_401_UNAUTHORIZED,
-            detail = "Someone else's blog"
-        )
+        error_handling('unauthorized', "Someone else's blog")
 
     if blog.posts:
-        raise HTTPException(
-            status_code = status.HTTP_403_FORBIDDEN,
-            detail = "blog not empty"
-        )
+        error_handling('forbidden', 'blog not empty')
 
     Blog.delete(blog_pk)
 
@@ -278,16 +236,10 @@ async def create_post(blog_pk: str, body: dict, logged_user: User = Depends(get_
     """
 
     if not Blog.is_exist(blog_pk):
-        raise HTTPException(
-            status_code = status.HTTP_404_NOT_FOUND,
-            detail = "Blog not found"
-        )
+        error_handling('not_found', 'blog not found')
 
     if blog_pk not in logged_user.blogs:
-        raise HTTPException(
-            status_code = status.HTTP_401_UNAUTHORIZED,
-            detail = "Someone else's blog"
-        )
+        error_handling('unauthorized', "Someone else's blog")
 
     try:
         post = BlogPost(content = body['content'].strip(), author = logged_user.pk, blog = blog_pk)
@@ -304,11 +256,7 @@ async def create_post(blog_pk: str, body: dict, logged_user: User = Depends(get_
         return post.save()
 
     except ValidationError as validation_error:
-        logger.info('%s', validation_error)
-        raise HTTPException(
-            status_code = status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail = str(validation_error)
-        )
+        error_handling('validation_error', str(validation_error))
 
 
 @app.put("/posts/{post_pk}")
@@ -318,16 +266,10 @@ async def update_post(post_pk: str, body: dict, logged_user: User = Depends(get_
     """
 
     if not BlogPost.is_exist(post_pk):
-        raise HTTPException(
-            status_code = status.HTTP_404_NOT_FOUND,
-            detail = "Post not found"
-        )
+        error_handling('not_found', 'post not found')
 
     if post_pk not in logged_user.posts:
-        raise HTTPException(
-            status_code = status.HTTP_401_UNAUTHORIZED,
-            detail = "Someone else's post"
-        )
+        error_handling('unauthorized', "Someone else's post")
 
     post = BlogPost.get(post_pk)
 
@@ -339,11 +281,7 @@ async def update_post(post_pk: str, body: dict, logged_user: User = Depends(get_
         return post.update_save()
 
     except ValidationError as validation_error:
-        logger.info('%s', validation_error)
-        raise HTTPException(
-            status_code = status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail = str(validation_error)
-        )
+        error_handling('validation_error', str(validation_error))
 
 
 @app.delete("/posts/{post_pk}")
@@ -353,18 +291,12 @@ async def delete_post(post_pk: str, logged_user: User = Depends(get_current_user
     """
 
     if not BlogPost.is_exist(post_pk):
-        raise HTTPException(
-            status_code = status.HTTP_404_NOT_FOUND,
-            detail = "Post not found"
-        )
+        error_handling('not_found', 'post not found')
 
     post = BlogPost.get(post_pk)
 
     if post.author != logged_user.pk:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail = "Someone else's post"
-        )
+        error_handling('unauthorized', "Someone else's post")
 
     blog = Blog.get(post.blog)
 
@@ -395,10 +327,7 @@ async def create_like(post_pk: str, logged_user: User = Depends(get_current_user
     """
 
     if not BlogPost.is_exist(post_pk):
-        raise HTTPException(
-            status_code = status.HTTP_404_NOT_FOUND,
-            detail = "Post not found"
-        )
+        error_handling('not_found', 'post not found')
 
     try:
         post = BlogPost.get(post_pk)
@@ -415,11 +344,7 @@ async def create_like(post_pk: str, logged_user: User = Depends(get_current_user
         return like.save()
 
     except ValidationError as validation_error:
-        logger.info('%s', validation_error)
-        raise HTTPException(
-            status_code = status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail = str(validation_error)
-        )
+        error_handling('validation_error', str(validation_error))
 
 
 @app.delete("/likes/{like_pk}")
@@ -429,18 +354,13 @@ async def delete_like(like_pk: str, logged_user: User = Depends(get_current_user
     """
 
     if not Like.is_exist(like_pk):
-        raise HTTPException(
-            status_code = status.HTTP_404_NOT_FOUND,
-            detail = "Like not found"
-        )
+        error_handling('not_found', 'like not found')
 
     like = Like.get(like_pk)
 
     if like.author != logged_user.pk:
-        raise HTTPException(
-            status_code = status.HTTP_401_UNAUTHORIZED,
-            detail = "Someone else's like"
-        )
+        error_handling('unauthorized', "Someone else's like")
+        
 
     post = BlogPost.get(like.post)
     post.likes.remove(like.pk)

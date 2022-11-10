@@ -10,11 +10,12 @@ from datetime import datetime, timedelta
 from jose import jwt, JWTError
 from passlib.context import CryptContext
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 from pydantic import ValidationError
 
 from .models import User, TokenPayload
+from .errors import error_handling
 
 
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
@@ -88,23 +89,12 @@ async def get_current_user(token: str = Depends(reuseable_oauth)) -> User:
         token_data = TokenPayload(**payload)
 
         if datetime.fromtimestamp(token_data.exp) < datetime.now():
-            raise HTTPException(
-                status_code = status.HTTP_401_UNAUTHORIZED,
-                detail="Token expired",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
+            error_handling('unauthorized', 'Could not validate credentials', {"WWW-Authenticate": "Bearer"})
 
     except(JWTError, ValidationError):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Could not validate credentials",
-            headers={"WWW-Authenticate": "Bearer"}
-        )
+        error_handling('unauthorized', 'token expired', {"WWW-Authenticate": "Bearer"})
 
     if not (user := User.find(User.email == token_data.sub).all()):
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
+        error_handling('not_found', 'user not found')
 
     return user[0]
