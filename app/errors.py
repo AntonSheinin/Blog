@@ -6,7 +6,7 @@
 
 import logging
 from typing import Any
-from fastapi import HTTPException, status
+from fastapi import HTTPException
 
 
 logging.basicConfig(level=logging.INFO)
@@ -22,36 +22,20 @@ def error_handling(code: str, message: str, payload : Any = None) -> None:
     match code:
         case 'bad_request':
             logger.info('%s', message)
-            raise HTTPException(
-                status_code = status.HTTP_400_BAD_REQUEST,
-                detail = message
-            )
+            raise HTTPException(status_code = 400, detail = message)
 
         case 'unauthorized':
             logger.info('%s', message)
-            raise HTTPException(
-                status_code = status.HTTP_401_UNAUTHORIZED,
-                detail = message,
-                headers = payload
-            )
+            raise HTTPException(status_code = 401, detail = message, headers = payload)
 
         case 'forbidden':
             logger.info('%s', message)
-            raise HTTPException(
-                status_code = status.HTTP_403_FORBIDDEN,
-                detail = message
-            )
+            raise HTTPException(status_code = 403, detail = message)
 
         case 'not_found':
             logger.info('%s', message)
-            raise HTTPException(
-                status_code = status.HTTP_404_NOT_FOUND,
-                detail = message
-            )
+            raise HTTPException(status_code = 404, detail = message)
 
         case 'validation_error':
             logger.info('%s', message)
-            raise HTTPException(
-                status_code = status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail = message
-            )
+            raise HTTPException(status_code = 422, detail = message)
