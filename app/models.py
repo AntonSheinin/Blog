@@ -58,8 +58,8 @@ class User(RedisBaseModel):
         Database model of user enity
     """
 
-    first_name: str = Field(index = True)
-    last_name: str = Field(index = True)
+    first_name: str = Field(index = True, min_length = 2, max_length = 20)
+    last_name: str = Field(index = True, min_length = 2, max_length = 20)
     email: EmailStr = Field(index = True)
     password: str = Field(min_length = 8)
     blogs: list[str] = Field(default_factory = list)
@@ -73,7 +73,7 @@ class Blog(RedisBaseModel):
     """
 
     author: str = Field(index = True, default = None)
-    title: str = Field(index = True)
+    title: str = Field(index = True, min_length = 2, max_length = 100)
     posts: list[str] = Field(default_factory = list)
 
 
@@ -83,7 +83,7 @@ class BlogPost(RedisBaseModel):
     """
 
     author: str = Field(index = True, default = None)
-    content: str = Field(index = True, max_length = 1000)
+    content: str = Field(index = True, min_length = 5, max_length = 1000)
     blog: str = Field(index = True)
     likes: list[str] = Field(default_factory = list)
 
