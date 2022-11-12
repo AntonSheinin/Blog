@@ -33,6 +33,7 @@ from .auth import (
 
 from .db_connectors import redis_cache
 
+
 FastAPICache.init(RedisBackend(redis_cache), prefix="fastapi-cache")
 
 app = FastAPI()
@@ -108,11 +109,12 @@ async def update_user(body: dict, logged_user: User = Depends(get_current_user))
         Updating logged user data
     """
 
+    logged_user.first_name = body["first_name"]
+    logged_user.last_name = body["last_name"]
+
     try:
-        logged_user.first_name = body["first_name"]
-        logged_user.last_name = body["last_name"]
         logged_user.update_save()
-        
+
     except ValidationError as validation_error:
         error_handling('validation_error', str(validation_error))
 
@@ -141,16 +143,15 @@ async def create_blog(body: dict, logged_user: User = Depends(get_current_user))
 
     try:
         blog = Blog(title = body['title'].strip(), author = logged_user.pk)
-
-        logged_user.blogs.append(blog.pk)
-        logged_user.update_save()
-
-        logger.info('user %s created blog %s', logged_user.pk, blog.pk)
-
         blog.save()
 
     except ValidationError as validation_error:
         error_handling('validation_error', str(validation_error))
+
+    logged_user.blogs.append(blog.pk)
+    logged_user.update_save()
+
+    logger.info('user %s created blog %s', logged_user.pk, blog.pk)
 
     return blog
 
@@ -185,13 +186,12 @@ async def update_blog(blog_pk: str, body: dict, logged_user: User = Depends(get_
 
     try:
         blog.title = body["title"].strip()
-        
-        logger.info('blog %s updated', blog.pk)
-
         blog.update_save()
 
     except ValidationError as validation_error:
         error_handling('validation_error', str(validation_error))
+
+    logger.info('blog %s updated', blog.pk)
 
     return blog
 
@@ -219,7 +219,7 @@ async def delete_blog(blog_pk: str, logged_user: User = Depends(get_current_user
 
     logged_user.blogs.remove(blog_pk)
     logged_user.update_save()
-    
+
     return {"success": f"blog {blog_pk} deleted successfully"}
 
 
@@ -248,19 +248,18 @@ async def create_post(blog_pk: str, body: dict, logged_user: User = Depends(get_
 
     try:
         post = BlogPost(content = body['content'].strip(), author = logged_user.pk, blog = blog_pk)
-
-        logged_user.posts.append(post.pk)
-        logged_user.update_save()
-
-        blog = Blog.get(blog_pk)
-        blog.posts.append(post.pk)
-        blog.update_save()
-
         post.save()
 
     except ValidationError as validation_error:
         error_handling('validation_error', str(validation_error))
-    
+
+    blog = Blog.get(blog_pk)
+    blog.posts.append(post.pk)
+    blog.update_save()
+
+    logged_user.posts.append(post.pk)
+    logged_user.update_save()
+
     logger.info('post %s created in blog %s', post.pk, blog.pk)
 
     return post
@@ -336,20 +335,20 @@ async def create_like(post_pk: str, logged_user: User = Depends(get_current_user
     if not BlogPost.is_exist(post_pk):
         error_handling('not_found', 'post not found')
 
+    post = BlogPost.get(post_pk)
+
     try:
-        post = BlogPost.get(post_pk)
         like = Like(post = post_pk, author = logged_user.pk)
-
-        logged_user.likes.append(like.pk)
-        logged_user.update_save()
-
-        post.likes.append(like.pk)
-        post.update_save()
-
         like.save()
 
     except ValidationError as validation_error:
         error_handling('validation_error', str(validation_error))
+
+    logged_user.likes.append(like.pk)
+    logged_user.update_save()
+
+    post.likes.append(like.pk)
+    post.update_save()
 
     logger.info('like %s created for post %s', like.pk, post.pk)
 
@@ -369,7 +368,6 @@ async def delete_like(like_pk: str, logged_user: User = Depends(get_current_user
 
     if like.author != logged_user.pk:
         error_handling('unauthorized', "Someone else's like")
-        
 
     post = BlogPost.get(like.post)
     post.likes.remove(like.pk)
