@@ -11,7 +11,7 @@ from pydantic import EmailStr, BaseModel
 from redis_om import EmbeddedJsonModel, Field, Migrator, NotFoundError
 
 from .db_connectors import redis_data
-
+from .validators import Password, Names
 
 class RedisBaseModel(EmbeddedJsonModel, ABC):
     """
@@ -55,13 +55,14 @@ class RedisBaseModel(EmbeddedJsonModel, ABC):
 
 class User(RedisBaseModel):
     """
-        Database model of user enity
+        Database model of User enity
     """
 
-    first_name: str = Field(index = True, min_length = 2, max_length = 20)
-    last_name: str = Field(index = True, min_length = 2, max_length = 20)
+    first_name: Names = Field(index = True)
+    last_name: Names = Field(index = True)
     email: EmailStr = Field(index = True)
-    password: str = Field(min_length = 8)
+    password: Password | None
+    hash_pass: str = Field(default = None)
     blogs: list[str] = Field(default_factory = list)
     posts: list[str] = Field(default_factory = list)
     likes: list[str] = Field(default_factory = list)
@@ -69,7 +70,7 @@ class User(RedisBaseModel):
 
 class Blog(RedisBaseModel):
     """
-        Database model of blog enity
+        Database model of Blog enity
     """
 
     author: str = Field(index = True, default = None)
@@ -79,7 +80,7 @@ class Blog(RedisBaseModel):
 
 class BlogPost(RedisBaseModel):
     """
-        Database model of post enity
+        Database model of Post enity
     """
 
     author: str = Field(index = True, default = None)
@@ -90,7 +91,7 @@ class BlogPost(RedisBaseModel):
 
 class Like(RedisBaseModel):
     """
-        Database model of like enity
+        Database model of Like enity
     """
 
     author: str = Field(index = True, default = None)
@@ -102,8 +103,8 @@ class TokenPayload(BaseModel):
         Pydantic model for JWT token payload
     """
 
-    sub: str = None
-    exp: int = None
+    sub: str =  None
+    exp: int =  None
 
 
 Migrator().run()

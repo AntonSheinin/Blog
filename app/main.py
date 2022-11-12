@@ -52,17 +52,20 @@ async def create_user(body: dict) -> User | Any:
 
     try:
         user = User(
-            first_name = body['first_name'].strip(),
-            last_name = body['last_name'].strip(),
+            first_name = body['first_name'],
+            last_name = body['last_name'],
             email = body['email'],
-            password = get_hashed_password(body['password'])
+            password = body['password']
         )
-
-        logger.info('created user: %s', user.pk)
-        return user.save()
+        user.hash_pass = get_hashed_password(body['password'])
+        user.password = None
+        user.save()
 
     except ValidationError as validation_error:
         error_handling('validation_error', str(validation_error))
+
+    logger.info('created user: %s', user.pk)
+    return user
 
 
 @app.post('/login')
@@ -76,9 +79,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()) -> dict:
 
     user = User.find(User.email == form_data.username).all()[0]
 
-    hashed_pass = user.password
-
-    if not verify_password(form_data.password, hashed_pass):
+    if not verify_password(form_data.password, user.hash_pass):
         error_handling('bad_request', 'incorrect email or password')
 
     logger.info('user %s logged in', user.pk)
@@ -102,21 +103,21 @@ async def get_current_user_data(user: User = Depends(get_current_user)) -> User:
 
 
 @app.put("/update-me")
-async def update_user(body: dict, logged_user: User = Depends(get_current_user)) -> User | Any:
+async def update_user(body: dict, logged_user: User = Depends(get_current_user)) -> User:
     """
         Updating logged user data
     """
 
     try:
-        logged_user.first_name = body["first_name"].strip()
-        logged_user.last_name = body["last_name"].strip()
+        logged_user.first_name = body["first_name"]
+        logged_user.last_name = body["last_name"]
+        logged_user.update_save()
         
-        logger.info('user %s updated', logged_user.pk)
-
-        return logged_user.update_save()
-
     except ValidationError as validation_error:
         error_handling('validation_error', str(validation_error))
+
+    logger.info('user %s updated', logged_user.pk)
+    return logged_user
 
 
 @app.delete("/delete-me")
@@ -133,7 +134,7 @@ async def delete_user(logged_user: User = Depends(get_current_user)) -> dict:
 
 
 @app.post("/create-blog")
-async def create_blog(body: dict, logged_user: User = Depends(get_current_user)) -> User | Any:
+async def create_blog(body: dict, logged_user: User = Depends(get_current_user)) -> Blog:
     """
         Creating new blog, author will be the logged user
     """
@@ -146,10 +147,12 @@ async def create_blog(body: dict, logged_user: User = Depends(get_current_user))
 
         logger.info('user %s created blog %s', logged_user.pk, blog.pk)
 
-        return blog.save()
+        blog.save()
 
     except ValidationError as validation_error:
         error_handling('validation_error', str(validation_error))
+
+    return blog
 
 
 @app.get("/blogs/{blog_pk}")
@@ -167,7 +170,7 @@ async def get_blog(blog_pk: str) -> Blog:
 
 
 @app.put("/blogs/{blog_pk}")
-async def update_blog(blog_pk: str, body: dict, logged_user: User = Depends(get_current_user)) -> User | Any:
+async def update_blog(blog_pk: str, body: dict, logged_user: User = Depends(get_current_user)) -> Blog:
     """
         Updating the blog that belongs to the logger user
     """
@@ -185,10 +188,12 @@ async def update_blog(blog_pk: str, body: dict, logged_user: User = Depends(get_
         
         logger.info('blog %s updated', blog.pk)
 
-        return blog.update_save()
+        blog.update_save()
 
     except ValidationError as validation_error:
         error_handling('validation_error', str(validation_error))
+
+    return blog
 
 
 @app.delete("/blogs/{blog_pk}")
@@ -230,7 +235,7 @@ async def blog_list() -> list:
 
 
 @app.post("/create-post/{blog_pk}")
-async def create_post(blog_pk: str, body: dict, logged_user: User = Depends(get_current_user)) -> BlogPost | Any:
+async def create_post(blog_pk: str, body: dict, logged_user: User = Depends(get_current_user)) -> BlogPost:
     """
         Creating the post in the blog that belongs to the logged user
     """
@@ -251,16 +256,18 @@ async def create_post(blog_pk: str, body: dict, logged_user: User = Depends(get_
         blog.posts.append(post.pk)
         blog.update_save()
 
-        logger.info('post %s created in blog %s', post.pk, blog.pk)
-
-        return post.save()
+        post.save()
 
     except ValidationError as validation_error:
         error_handling('validation_error', str(validation_error))
+    
+    logger.info('post %s created in blog %s', post.pk, blog.pk)
+
+    return post
 
 
 @app.put("/posts/{post_pk}")
-async def update_post(post_pk: str, body: dict, logged_user: User = Depends(get_current_user)) -> BlogPost | Any:
+async def update_post(post_pk: str, body: dict, logged_user: User = Depends(get_current_user)) -> BlogPost:
     """
         Updating the post in the blog that belongs to the logged user
     """
@@ -275,13 +282,13 @@ async def update_post(post_pk: str, body: dict, logged_user: User = Depends(get_
 
     try:
         post.content = body["content"].strip()
-        
-        logger.info('post %s updated', post.pk)
-
-        return post.update_save()
+        post.update_save()
 
     except ValidationError as validation_error:
         error_handling('validation_error', str(validation_error))
+
+    logger.info('post %s updated', post.pk)
+    return post
 
 
 @app.delete("/posts/{post_pk}")
@@ -321,7 +328,7 @@ async def delete_post(post_pk: str, logged_user: User = Depends(get_current_user
 
 
 @app.post("/create-like/{post_pk}")
-async def create_like(post_pk: str, logged_user: User = Depends(get_current_user)) -> BlogPost | Any:
+async def create_like(post_pk: str, logged_user: User = Depends(get_current_user)) -> Like:
     """
         Creating like for the post
     """
@@ -339,12 +346,14 @@ async def create_like(post_pk: str, logged_user: User = Depends(get_current_user
         post.likes.append(like.pk)
         post.update_save()
 
-        logger.info('like %s created for post %s', like.pk, post.pk)
-
-        return like.save()
+        like.save()
 
     except ValidationError as validation_error:
         error_handling('validation_error', str(validation_error))
+
+    logger.info('like %s created for post %s', like.pk, post.pk)
+
+    return like
 
 
 @app.delete("/likes/{like_pk}")
